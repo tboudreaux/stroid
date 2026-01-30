@@ -73,11 +73,13 @@ subprojects/liblogging/
 subprojects/libconfig/
 subprojects/libcomposition/
 subprojects/GridFire/
+subprojects/tomlplusplus-*/
 
 qhull.wrap
 quill.wrap
 yaml-cpp.wrap
 cppad.wrap
+tomlplusplus.wrap
 
 subprojects/quill.wrap
 

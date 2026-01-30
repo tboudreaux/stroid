@@ -1,0 +1,1 @@
+executable('stroid_sandbox', 'main.cpp', dependencies: stroid_dep)

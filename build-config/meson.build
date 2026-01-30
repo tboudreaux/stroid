@@ -1,1 +1,2 @@
 subdir('mfem')
+subdir('libconfig')

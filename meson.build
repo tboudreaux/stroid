@@ -2,3 +2,4 @@ project('stroid', 'cpp', meson_version : '>= 1.3.0', version : 'v0.1.0a0.1', def
 
 subdir('build-config')
 subdir('src')
+subdir('tests')
