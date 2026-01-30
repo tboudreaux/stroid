@@ -1,0 +1,18 @@
+<map id="src/include/stroid/config/config.h" name="src/include/stroid/config/config.h">
+<area shape="rect" id="Node000001" title=" " alt="" coords="371,5,492,46"/>
+<area shape="rect" id="Node000002" href="$curvilinear_8h.html" title=" " alt="" coords="30,94,177,135"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="357,49,178,96,177,91,356,44"/>
+<area shape="rect" id="Node000004" href="$mapping_8h.html" title=" " alt="" coords="201,94,339,135"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="383,56,308,96,305,91,380,51"/>
+<area shape="rect" id="Node000006" href="$topology_8h.html" title=" " alt="" coords="363,94,500,135"/>
+<area shape="poly" id="edge6_Node000001_Node000006" title=" " alt="" coords="434,62,434,94,429,94,429,62"/>
+<area shape="rect" id="Node000007" href="$mesh_8cpp.html" title=" " alt="" coords="524,102,659,127"/>
+<area shape="poly" id="edge7_Node000001_Node000007" title=" " alt="" coords="482,51,570,99,568,103,480,56"/>
+<area shape="rect" id="Node000008" href="$topology_8cpp.html" title=" " alt="" coords="683,102,868,127"/>
+<area shape="poly" id="edge8_Node000001_Node000008" title=" " alt="" coords="508,43,728,98,726,103,506,48"/>
+<area shape="rect" id="Node000003" href="$curvilinear_8cpp.html" title=" " alt="" coords="5,183,202,208"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="106,150,106,182,101,182,101,150"/>
+<area shape="poly" id="edge4_Node000004_Node000003" title=" " alt="" coords="216,144,130,185,128,180,214,139"/>
+<area shape="rect" id="Node000005" href="$mapping_8cpp.html" title=" " alt="" coords="226,183,413,208"/>
+<area shape="poly" id="edge5_Node000004_Node000005" title=" " alt="" coords="293,147,314,181,310,183,288,149"/>
+</map>

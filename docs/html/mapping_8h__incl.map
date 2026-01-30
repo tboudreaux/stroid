@@ -1,0 +1,9 @@
+<map id="src/include/stroid/topology/mapping.h" name="src/include/stroid/topology/mapping.h">
+<area shape="rect" id="Node000001" title=" " alt="" coords="110,5,249,46"/>
+<area shape="rect" id="Node000002" title=" " alt="" coords="5,94,85,120"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="147,49,80,88,78,83,145,44"/>
+<area shape="rect" id="Node000003" href="$config_8h.html" title=" " alt="" coords="108,94,251,120"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="182,46,182,78,177,78,177,46"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="275,94,426,120"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="223,44,312,85,309,90,221,49"/>
+</map>
