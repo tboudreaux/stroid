@@ -52,23 +52,23 @@ struct OUTPUT_CONFIG {
 int main(int argc, char** argv) {
     fourdst::config::Config<stroid::config::MeshConfig> cfg;
     OUTPUT_CONFIG out_cfg;
-    MESH_FORMATS selected_format = MESH_FORMATS::VTU; // Default fallback
+    auto selected_format = MESH_FORMATS::MFEM;
 
     CLI::App app{"stroid - A tool for generating multi-block meshes for stellar modeling"};
 
     app.footer(
       "\nEXAMPLES:\n"
-      " ->   stroid generate -c config.toml -o star_mesh.vtu vtu\n"
-      " ->   stroid generate --config config.toml --view --no-save\n"
-      " ->   stroid info --version\n"
-      " ->   stroid info --default\n"
+      "|   stroid generate -c config.toml -o star_mesh.vtu vtu\n"
+      "|   stroid generate --config config.toml --view --no-save\n"
+      "|   stroid info --version\n"
+      "|   stroid info --default\n"
     );
 
     auto* generate = app.add_subcommand("generate", "Generate a multi-block mesh");
     auto* info = app.add_subcommand("info", "Access information about stroid");
 
     std::optional<std::string> config_filename;
-    std::string output_filename = "stroid";
+    std::string output_filename = "stroid.mesh";
     bool view_mesh = false;
     bool no_save = false;
     std::string glvis_host = "localhost";
