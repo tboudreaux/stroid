@@ -105,10 +105,9 @@ EOF
 
 chmod +x "$STAGING_DIR/install.sh"
 
-tar -czf "$TARBALL_NAME" -C "$STAGING_DIR" .
+export COPYFILE_DISABLE=1
+tar -cz --no-xattrs -f "$TARBALL_NAME" -C "$STAGING_DIR" .
 
 echo "Distribution package created: $TARBALL_NAME"
-echo "Contents:"
-tar -tf "$TARBALL_NAME"
 
 rm -rf "$STAGING_DIR"
