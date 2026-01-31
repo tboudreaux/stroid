@@ -103,3 +103,7 @@ output/
 scratch/
 
 releases/
+stroid-dist/
+stroid-universal-dist.tar.gz
+stroid-*/
+stroid-*.tar.gz
