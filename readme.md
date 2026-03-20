@@ -78,15 +78,20 @@ file is found below
 
 ```toml
 [main]
-core_steepness = 1.0
-flattening = 0.0
-include_external_domain = false
+refinement_levels = 2
 order = 3
+include_external_domain = true
 r_core = 1.5
+r_star = 5.0
+flattening = 0.08
 r_infinity = 6.0
 r_instability = 1e-14
-r_star = 5.0
-refinement_levels = 4
+core_steepness = 1.0
+surface_bdr_id = 1
+inf_bdr_id = 2
+core_id = 1
+envelope_id = 2
+vacuum_id = 3
 ```
 
 <!-- Table of what these parameters do -->
@@ -94,13 +99,18 @@ refinement_levels = 4
 |-------------------------|-----------------------------------------------------------------------------------------------------|---------|
 | refinement_levels       | Number of uniform refinement levels to apply to the mesh after generation                           | 4       |
 | order                   | The polynomial order of the finite elements in the mesh                                             | 3       |
-| include_external_domain | Whether to include an external domain extending to r_infinity                                       | false   |
+| include_external_domain | Whether to include an external domain extending to r_infinity                                       | true    |
 | r_core                  | The radius of the core region of the star                                                           | 1.5     |
 | r_star                  | The radius of the star                                                                              | 5.0     |
 | flattening              | The flattening factor of the star (0 for spherical, >0 for oblate)                                  | 0       |
 | r_infinity              | The outer radius of the external domain (if included)                                               | 6.0     |
 | r_instability           | The radius at which no transformations are applied to the initial topology (to avoid singularities) | 1e-14   |
 | core_steepness          | The steepness of the transition between the core and envelope regions of the star                   | 1.0     |
+| surface_bdr_id          | The boundary ID to assign to the surface of the star                                                | 1       |
+| inf_bdr_id              | The boundary ID to assign to the outer boundary of the external domain (if included)                | 2       |
+| core_id                 | The material ID to assign to the core region of the star                                            | 1       |
+| envelope_id             | The material ID to assign to the envelope region of the star                                        | 2       |
+| vacuum_id               | The material ID to assign to the vacuum region of the star (if included)                            | 3       |
 
 
 If no configuration file is provided, stroid will use the default parameters listed above. Further, configuration files
