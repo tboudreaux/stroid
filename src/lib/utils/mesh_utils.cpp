@@ -4,8 +4,6 @@
 
 namespace stroid::utils {
     void MarkFlippedElements(mfem::Mesh& mesh) {
-        size_t total_flipped = 0;
-        size_t total_elements = mesh.GetNE();
         for (int i = 0; i < mesh.GetNE(); i++) {
             mfem::ElementTransformation *T = mesh.GetElementTransformation(i);
 
@@ -22,17 +20,11 @@ namespace stroid::utils {
 
             if (is_flipped) {
                 mesh.SetAttribute(i, 999);
-                total_flipped++;
             }
-
-
         }
-        std::println("Marked {}/{} elements as flipped.", total_flipped, total_elements);
     }
 
     void MarkFlippedBoundaryElements(mfem::Mesh& mesh) {
-        size_t total_flipped = 0;
-        size_t total_boundary_elements = mesh.GetNBE();
         for (int i = 0; i < mesh.GetNBE(); i++) {
             mfem::ElementTransformation *T = mesh.GetBdrElementTransformation(i);
             const mfem::IntegrationRule &ir = mfem::IntRules.Get(T->GetGeometryType(), 2 * T->Order());
@@ -56,9 +48,7 @@ namespace stroid::utils {
 
             if (is_flipped) {
                 mesh.SetBdrAttribute(i, 500);
-                total_flipped++;
             }
         }
-        std::println("Marked {}/{} boundary elements as flipped.", total_flipped, total_boundary_elements);
     }
 }

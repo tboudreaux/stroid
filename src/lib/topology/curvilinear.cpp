@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <memory>
+#include <sys/proc.h>
 
 namespace stroid::topology {
     void PromoteToHighOrder(mfem::Mesh &mesh, const fourdst::config::Config<config::MeshConfig> &config) {
@@ -22,20 +23,48 @@ namespace stroid::topology {
 
         const int vDim = fes->GetVDim();
         const int nDofs = fes->GetNDofs();
+        const int nElem = mesh.GetNE();
 
+        std::vector<bool> processed(nDofs, false);
+        mfem::Array<int> vdofs;
         mfem::Vector pos(vDim);
 
-        for (int i = 0; i < nDofs; ++i) {
-            for (int d = 0; d < vDim; ++d) {
-                pos(d) = nodes(fes->DofToVDof(i, d));
-            }
+        for (int elemID = 0; elemID < nElem; ++elemID) {
+            const int attrID = mesh.GetAttribute(elemID);
+            fes->GetElementVDofs(elemID, vdofs);
 
-            TransformPoint(pos, config, 0);
+            for (int dofID = 0; dofID < vdofs.Size(); ++dofID) {
+                const int vDof = vdofs[dofID];
+                const int scalar_dof = (fes->GetOrdering() == mfem::Ordering::byNODES) ? vDof / vDim : vDof % nDofs;
 
-            for (int d = 0; d < vDim; ++d) {
-                nodes(fes->DofToVDof(i, d)) = pos(d);
+                if (processed[scalar_dof]) {
+                    continue; // Skip already processed dofs. This avoids doing multiple transformations of a node if it was already transformed by a neighbor
+                }
+
+                for (int d = 0; d < vDim; ++d) {
+                    pos(d) = nodes(fes->DofToVDof(scalar_dof, d));
+                }
+
+                TransformPoint(pos, config, attrID);
+
+                for (int d = 0; d < vDim; ++d) {
+                    nodes(fes->DofToVDof(scalar_dof, d)) = pos(d);
+                }
+
+                processed[scalar_dof] = true;
             }
         }
 
+        // for (int i = 0; i < nDofs; ++i) {
+        //     for (int d = 0; d < vDim; ++d) {
+        //         pos(d) = nodes(fes->DofToVDof(i, d));
+        //     }
+        //
+        //     TransformPoint(pos, config, 0);
+        //
+        //     for (int d = 0; d < vDim; ++d) {
+        //         nodes(fes->DofToVDof(i, d)) = pos(d);
+        //     }
+        // }
     }
 }

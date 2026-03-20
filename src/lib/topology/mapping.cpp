@@ -32,20 +32,6 @@ namespace stroid::topology {
         pos(2) *= (1.0 - config->flattening);
     }
 
-    void ApplyKelvin(mfem::Vector &pos, const fourdst::config::Config<config::MeshConfig> &config) {
-        const double r = pos.Norml2();
-        if (r <= config->r_star) {
-            return;
-        }
-
-        double xi = (r - config->r_star) / (config->r_infinity - config->r_star);
-        xi = std::min(0.999, std::max(0.0, xi)); // Clamp xi to [0, 0.999]
-
-        const double r_new = config->r_star + xi / (1.0 - xi);
-        const double scale = r_new / r;
-        pos *= scale;
-    }
-
     void TransformPoint(mfem::Vector &pos, const fourdst::config::Config<config::MeshConfig> &config, int attribute_id) {
         double l_inf = 0.0;
         for (int i = 0; i < pos.Size(); ++i) {
@@ -82,9 +68,6 @@ namespace stroid::topology {
             ApplySpheroidal(pos, config);
             return;
         }
-
-
-
         if (l_inf <= config->r_star) {
             const double xi = (l_inf - config->r_core) / (config->r_star - config->r_core);
             const double r_phys = config->r_core + xi * (config->r_star - config->r_core);
@@ -97,7 +80,6 @@ namespace stroid::topology {
             pos = unit_dir;
             pos *= l_inf;
 
-            ApplyKelvin(pos, config);
             ApplySpheroidal(pos, config);
         }
     }
