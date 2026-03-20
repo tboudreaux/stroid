@@ -1,0 +1,1 @@
+executable('sandbox_test', 'sandbox_test.cpp', dependencies: [stroid_dep])
