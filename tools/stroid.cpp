@@ -112,11 +112,13 @@ int main(int argc, char** argv) {
 
     info->add_flag_callback("-v,--version", []() {
         std::println("Stroid Version {}", stroid::version::toString());
+        exit(0);
     }, "Display stroid version information");
 
     info->add_flag_callback("-d,--default", [&cfg]() {
         cfg.save("default.toml");
         std::println("Default configuration saved to default.toml");
+        exit(0);
     }, "Save the default configuration to default.toml");
 
     try {
