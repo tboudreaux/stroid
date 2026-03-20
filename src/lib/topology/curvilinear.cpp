@@ -2,8 +2,6 @@
 #include "stroid/topology/mapping.h"
 
 #include <iostream>
-#include <memory>
-#include <sys/proc.h>
 
 namespace stroid::topology {
     void PromoteToHighOrder(mfem::Mesh &mesh, const fourdst::config::Config<config::MeshConfig> &config) {
