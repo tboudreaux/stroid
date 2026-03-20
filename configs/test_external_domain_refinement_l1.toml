@@ -1,15 +1,16 @@
 [main]
 core_steepness = 1.0
-flattening = 0.2
-include_external_domain = false
+flattening = 0.0
+include_external_domain = true
 inf_bdr_id = 2
 order = 3
 r_core = 1.5
 r_infinity = 6.0
 r_instability = 1e-14
 r_star = 5.0
-refinement_levels = 4
+refinement_levels = 1
 surface_bdr_id = 1
 core_id = 1
 envelope_id = 2
 vacuum_id = 3
+

@@ -8,5 +8,6 @@ var searchData=
   ['stroid_3a_3aconfig_5',['config',['../namespacestroid_1_1config.html',1,'stroid']]],
   ['stroid_3a_3aio_6',['IO',['../namespacestroid_1_1_i_o.html',1,'stroid']]],
   ['stroid_3a_3atopology_7',['topology',['../namespacestroid_1_1topology.html',1,'stroid']]],
-  ['stroid_3a_3autils_8',['utils',['../namespacestroid_1_1utils.html',1,'stroid']]]
+  ['stroid_3a_3autils_8',['utils',['../namespacestroid_1_1utils.html',1,'stroid']]],
+  ['surface_5fbdr_5fid_9',['surface_bdr_id',['../structstroid_1_1config_1_1_mesh_config.html#a33f25ff277aa8834065e04ccb9cdbdda',1,'stroid::config::MeshConfig']]]
 ];

@@ -31,7 +31,7 @@
  <tr id="projectrow">
   <td id="projectlogo"><img alt="Logo" src="Logo.png"/></td>
   <td id="projectalign">
-   <div id="projectname">stroid<span id="projectnumber">&#160;v0.1.0</span>
+   <div id="projectname">stroid<span id="projectnumber">&#160;v0.2.0</span>
    </div>
    <div id="projectbrief">Multi-block curvilinear mesh generation</div>
   </td>
@@ -150,15 +150,20 @@ Running</h2>
 Configuration File</h2>
 <p>Stroid uses a TOML configuration file to specify the parameters for mesh generation. An example configuration file is found below</p>
 <div class="fragment"><div class="line">[main]</div>
-<div class="line">core_steepness = 1.0</div>
-<div class="line">flattening = 0.0</div>
-<div class="line">include_external_domain = false</div>
+<div class="line">refinement_levels = 2</div>
 <div class="line">order = 3</div>
+<div class="line">include_external_domain = true</div>
 <div class="line">r_core = 1.5</div>
+<div class="line">r_star = 5.0</div>
+<div class="line">flattening = 0.08</div>
 <div class="line">r_infinity = 6.0</div>
 <div class="line">r_instability = 1e-14</div>
-<div class="line">r_star = 5.0</div>
-<div class="line">refinement_levels = 4</div>
+<div class="line">core_steepness = 1.0</div>
+<div class="line">surface_bdr_id = 1</div>
+<div class="line">inf_bdr_id = 2</div>
+<div class="line">core_id = 1</div>
+<div class="line">envelope_id = 2</div>
+<div class="line">vacuum_id = 3</div>
 </div><!-- fragment --><table class="markdownTable">
 <tr class="markdownTableHead">
 <th class="markdownTableHeadNone">Parameter   </th><th class="markdownTableHeadNone">Description   </th><th class="markdownTableHeadNone">Default    </th></tr>
@@ -167,7 +172,7 @@ Configuration File</h2>
 <tr class="markdownTableRowEven">
 <td class="markdownTableBodyNone">order   </td><td class="markdownTableBodyNone">The polynomial order of the finite elements in the mesh   </td><td class="markdownTableBodyNone">3    </td></tr>
 <tr class="markdownTableRowOdd">
-<td class="markdownTableBodyNone">include_external_domain   </td><td class="markdownTableBodyNone">Whether to include an external domain extending to r_infinity   </td><td class="markdownTableBodyNone">false    </td></tr>
+<td class="markdownTableBodyNone">include_external_domain   </td><td class="markdownTableBodyNone">Whether to include an external domain extending to r_infinity   </td><td class="markdownTableBodyNone">true    </td></tr>
 <tr class="markdownTableRowEven">
 <td class="markdownTableBodyNone">r_core   </td><td class="markdownTableBodyNone">The radius of the core region of the star   </td><td class="markdownTableBodyNone">1.5    </td></tr>
 <tr class="markdownTableRowOdd">
@@ -179,7 +184,17 @@ Configuration File</h2>
 <tr class="markdownTableRowEven">
 <td class="markdownTableBodyNone">r_instability   </td><td class="markdownTableBodyNone">The radius at which no transformations are applied to the initial topology (to avoid singularities)   </td><td class="markdownTableBodyNone">1e-14    </td></tr>
 <tr class="markdownTableRowOdd">
-<td class="markdownTableBodyNone">core_steepness   </td><td class="markdownTableBodyNone">The steepness of the transition between the core and envelope regions of the star   </td><td class="markdownTableBodyNone">1.0   </td></tr>
+<td class="markdownTableBodyNone">core_steepness   </td><td class="markdownTableBodyNone">The steepness of the transition between the core and envelope regions of the star   </td><td class="markdownTableBodyNone">1.0    </td></tr>
+<tr class="markdownTableRowEven">
+<td class="markdownTableBodyNone">surface_bdr_id   </td><td class="markdownTableBodyNone">The boundary ID to assign to the surface of the star   </td><td class="markdownTableBodyNone">1    </td></tr>
+<tr class="markdownTableRowOdd">
+<td class="markdownTableBodyNone">inf_bdr_id   </td><td class="markdownTableBodyNone">The boundary ID to assign to the outer boundary of the external domain (if included)   </td><td class="markdownTableBodyNone">2    </td></tr>
+<tr class="markdownTableRowEven">
+<td class="markdownTableBodyNone">core_id   </td><td class="markdownTableBodyNone">The material ID to assign to the core region of the star   </td><td class="markdownTableBodyNone">1    </td></tr>
+<tr class="markdownTableRowOdd">
+<td class="markdownTableBodyNone">envelope_id   </td><td class="markdownTableBodyNone">The material ID to assign to the envelope region of the star   </td><td class="markdownTableBodyNone">2    </td></tr>
+<tr class="markdownTableRowEven">
+<td class="markdownTableBodyNone">vacuum_id   </td><td class="markdownTableBodyNone">The material ID to assign to the vacuum region of the star (if included)   </td><td class="markdownTableBodyNone">3   </td></tr>
 </table>
 <p>If no configuration file is provided, stroid will use the default parameters listed above. Further, configuration files need only include parameters that differ from the defaults, any parameters not specified will use the default values.</p>
 <h2><a class="anchor" id="autotoc_md7"></a>
@@ -211,9 +226,9 @@ C++ Interface</h2>
 <div class="ttc" id="amesh_8h_html"><div class="ttname"><a href="mesh_8h.html">mesh.h</a></div></div>
 <div class="ttc" id="anamespacestroid_1_1_i_o_html_a496f5c16eaffda5922a0b96c1f525dab"><div class="ttname"><a href="namespacestroid_1_1_i_o.html#a496f5c16eaffda5922a0b96c1f525dab">stroid::IO::ViewMesh</a></div><div class="ttdeci">void ViewMesh(mfem::Mesh &amp;mesh, const std::string &amp;title, VISUALIZATION_MODE mode, const std::string &amp;vishost, int visport)</div><div class="ttdoc">Stream a mesh to a running GLVis server for interactive viewing.</div><div class="ttdef"><b>Definition</b> mesh.cpp:25</div></div>
 <div class="ttc" id="anamespacestroid_1_1_i_o_html_ad4048304d8a0c7075d2b2a6e465d0b6eaee96e14c2b71bd59252006289ba464cf"><div class="ttname"><a href="namespacestroid_1_1_i_o.html#ad4048304d8a0c7075d2b2a6e465d0b6eaee96e14c2b71bd59252006289ba464cf">stroid::IO::VISUALIZATION_MODE::BOUNDARY_ELEMENT_ID</a></div><div class="ttdeci">@ BOUNDARY_ELEMENT_ID</div><div class="ttdoc">Color boundary-adjacent elements by boundary attribute/ID.</div><div class="ttdef"><b>Definition</b> mesh.h:15</div></div>
-<div class="ttc" id="anamespacestroid_1_1topology_html_a5907aa2e639cda703d48d177abc37caf"><div class="ttname"><a href="namespacestroid_1_1topology.html#a5907aa2e639cda703d48d177abc37caf">stroid::topology::PromoteToHighOrder</a></div><div class="ttdeci">void PromoteToHighOrder(mfem::Mesh &amp;mesh, const fourdst::config::Config&lt; config::MeshConfig &gt; &amp;config)</div><div class="ttdoc">Promote a mesh to high-order by attaching an H1 nodal finite element space.</div><div class="ttdef"><b>Definition</b> curvilinear.cpp:8</div></div>
-<div class="ttc" id="anamespacestroid_1_1topology_html_a62774bcba7ea1a485892dcd4bed6425b"><div class="ttname"><a href="namespacestroid_1_1topology.html#a62774bcba7ea1a485892dcd4bed6425b">stroid::topology::Finalize</a></div><div class="ttdeci">void Finalize(mfem::Mesh &amp;mesh, const fourdst::config::Config&lt; config::MeshConfig &gt; &amp;config)</div><div class="ttdoc">Finalize topology, validate orientation, and apply uniform refinement.</div><div class="ttdef"><b>Definition</b> topology.cpp:59</div></div>
-<div class="ttc" id="anamespacestroid_1_1topology_html_a836ed13e5bac63e7952c3ce4e5532e78"><div class="ttname"><a href="namespacestroid_1_1topology.html#a836ed13e5bac63e7952c3ce4e5532e78">stroid::topology::ProjectMesh</a></div><div class="ttdeci">void ProjectMesh(mfem::Mesh &amp;mesh, const fourdst::config::Config&lt; config::MeshConfig &gt; &amp;config)</div><div class="ttdoc">Project high-order mesh nodes using the configured curvilinear mapping.</div><div class="ttdef"><b>Definition</b> curvilinear.cpp:14</div></div>
+<div class="ttc" id="anamespacestroid_1_1topology_html_a5907aa2e639cda703d48d177abc37caf"><div class="ttname"><a href="namespacestroid_1_1topology.html#a5907aa2e639cda703d48d177abc37caf">stroid::topology::PromoteToHighOrder</a></div><div class="ttdeci">void PromoteToHighOrder(mfem::Mesh &amp;mesh, const fourdst::config::Config&lt; config::MeshConfig &gt; &amp;config)</div><div class="ttdoc">Promote a mesh to high-order by attaching an H1 nodal finite element space.</div><div class="ttdef"><b>Definition</b> curvilinear.cpp:9</div></div>
+<div class="ttc" id="anamespacestroid_1_1topology_html_a62774bcba7ea1a485892dcd4bed6425b"><div class="ttname"><a href="namespacestroid_1_1topology.html#a62774bcba7ea1a485892dcd4bed6425b">stroid::topology::Finalize</a></div><div class="ttdeci">void Finalize(mfem::Mesh &amp;mesh, const fourdst::config::Config&lt; config::MeshConfig &gt; &amp;config)</div><div class="ttdoc">Finalize topology, validate orientation, and apply uniform refinement.</div><div class="ttdef"><b>Definition</b> topology.cpp:90</div></div>
+<div class="ttc" id="anamespacestroid_1_1topology_html_a836ed13e5bac63e7952c3ce4e5532e78"><div class="ttname"><a href="namespacestroid_1_1topology.html#a836ed13e5bac63e7952c3ce4e5532e78">stroid::topology::ProjectMesh</a></div><div class="ttdeci">void ProjectMesh(mfem::Mesh &amp;mesh, const fourdst::config::Config&lt; config::MeshConfig &gt; &amp;config)</div><div class="ttdoc">Project high-order mesh nodes using the configured curvilinear mapping.</div><div class="ttdef"><b>Definition</b> curvilinear.cpp:15</div></div>
 <div class="ttc" id="anamespacestroid_1_1topology_html_abc0d8a1fb8e9c5ac0e259e4c93db7892"><div class="ttname"><a href="namespacestroid_1_1topology.html#abc0d8a1fb8e9c5ac0e259e4c93db7892">stroid::topology::BuildSkeleton</a></div><div class="ttdeci">std::unique_ptr&lt; mfem::Mesh &gt; BuildSkeleton(const fourdst::config::Config&lt; config::MeshConfig &gt; &amp;config)</div><div class="ttdoc">Build the initial multi-block mesh topology for the star model.</div><div class="ttdef"><b>Definition</b> topology.cpp:10</div></div>
 <div class="ttc" id="atopology_8h_html"><div class="ttname"><a href="topology_8h.html">topology.h</a></div></div>
 </div><!-- fragment --><h1><a class="anchor" id="autotoc_md8"></a>
