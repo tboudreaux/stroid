@@ -10,6 +10,7 @@ stroid_sources = files(
     'lib/topology/curvilinear.cpp',
     'lib/topology/mapping.cpp',
     'lib/topology/topology.cpp',
+    'lib/topology/optimize.cpp',
     'lib/IO/mesh.cpp',
     'lib/utils/mesh_utils.cpp',
 )

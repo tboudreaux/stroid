@@ -132,10 +132,16 @@ int main(int argc, char** argv) {
             cfg.load(config_filename.value());
         }
 
+
         const std::unique_ptr<mfem::Mesh> mesh = stroid::topology::BuildSkeleton(cfg);
         stroid::topology::Finalize(*mesh, cfg);
         stroid::topology::PromoteToHighOrder(*mesh, cfg);
         stroid::topology::ProjectMesh(*mesh, cfg);
+        if (cfg->optimization_methods.has_value() && cfg->optimization_methods.value().tmop.has_value() && cfg->optimization_methods.value().tmop.value()) {
+            stroid::topology::ApplyTMOP(*mesh, cfg);
+        }
+
+
 
         if (!no_save) {
             const std::string& final_path = output_filename;

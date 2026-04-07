@@ -13,3 +13,6 @@ surface_bdr_id = 1
 core_id = 1
 envelope_id = 2
 vacuum_id = 3
+
+[main.optimization_methods]
+smoothstep = true

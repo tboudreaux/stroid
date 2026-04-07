@@ -17,6 +17,8 @@
 #include <algorithm>
 #include <array>
 #include <limits>
+#include <print>
+#include <complex>
 
 namespace {
 
@@ -32,10 +34,10 @@ std::filesystem::path GetSourceRoot() {
     return std::filesystem::current_path();
 }
 
-Config LoadConfigFromRepo(const std::filesystem::path& relative_path) {
-    Config cfg;
-    cfg.load((GetSourceRoot() / relative_path).string());
-    return cfg;
+std::unique_ptr<Config> LoadConfigFromRepo(const std::filesystem::path& relative_path) {
+    auto cfg_ptr = std::make_unique<Config>();
+    cfg_ptr->load((GetSourceRoot() / relative_path).string());
+    return cfg_ptr;
 }
 
 
@@ -122,13 +124,13 @@ std::unique_ptr<mfem::Mesh> BuildProjectedMesh(const Config& cfg) {
 
 double ComputeStellarVolumeWithDomainLFIntegrator(mfem::Mesh& mesh, const Config& cfg) {
     const int mesh_max_attr = mesh.attributes.Size() > 0 ? mesh.attributes.Max() : 0;
-    const int cfg_max_attr = static_cast<int>(std::max({cfg->core_id, cfg->envelope_id, cfg->vacuum_id}));
+    const int cfg_max_attr = static_cast<int>(std::max({cfg->core_id.value(), cfg->envelope_id.value(), cfg->vacuum_id.value()}));
     const int coeff_size = std::max(1, std::max(mesh_max_attr, cfg_max_attr));
 
     mfem::Vector attr_coeff(coeff_size);
     attr_coeff = 0.0;
-    attr_coeff(static_cast<int>(cfg->core_id) - 1) = 1.0;
-    attr_coeff(static_cast<int>(cfg->envelope_id) - 1) = 1.0;
+    attr_coeff(static_cast<int>(cfg->core_id.value()) - 1) = 1.0;
+    attr_coeff(static_cast<int>(cfg->envelope_id.value()) - 1) = 1.0;
 
     mfem::PWConstCoefficient stellar_coeff(attr_coeff);
     mfem::L2_FECollection fec(0, mesh.Dimension());
@@ -233,6 +235,26 @@ ConditioningStats CollectConditioningStats(const mfem::Mesh& mesh, const std::se
     return stats;
 }
 
+std::optional<double> EvalGridFunctionAtPoint(
+    mfem::Mesh& mesh,
+    const mfem::Vector& x,
+    const mfem::GridFunction& u ){
+
+    mfem::Array<int> elem_ids;
+    mfem::Array<mfem::IntegrationPoint> ips;
+    mfem::DenseMatrix P(x.Size(), 1);
+    P.SetCol(0, x);
+
+    mesh.FindPoints(P, elem_ids, ips, false);
+
+    if (elem_ids.Size() > 0 && elem_ids[0] >= 0) {
+        return u.GetValue(elem_ids[0], ips[0]);
+    } else {
+        return std::nullopt;
+
+    }
+}
+
 } // namespace
 
 /**
@@ -270,7 +292,8 @@ TEST_F(stroidTest, BuildSkeleton_DefaultCounts) {
  * `src/lib/topology/topology.cpp` (`vacuum_shells`, `inf_bdr_quads`) and config parsing path.
  */
 TEST_F(stroidTest, BuildSkeleton_ExternalDomainCounts) {
-    const Config cfg = LoadConfigFromRepo("configs/test_external_domain.toml");
+    const auto cfg_ptr = LoadConfigFromRepo("configs/test_external_domain.toml");
+    const auto& cfg = *cfg_ptr;
     const std::unique_ptr<mfem::Mesh> mesh = stroid::topology::BuildSkeleton(cfg);
 
     ASSERT_NE(mesh, nullptr);
@@ -289,19 +312,20 @@ TEST_F(stroidTest, BuildSkeleton_ExternalDomainCounts) {
  * `core_id`, `envelope_id`, `vacuum_id`, `surface_bdr_id`, `inf_bdr_id` in config fixtures.
  */
 TEST_F(stroidTest, BuildSkeleton_ExternalDomainAttributes) {
-    const Config cfg = LoadConfigFromRepo("configs/test_external_domain.toml");
+    const auto cfg_ptr = LoadConfigFromRepo("configs/test_external_domain.toml");
+    const auto& cfg = *cfg_ptr;
     const std::unique_ptr<mfem::Mesh> mesh = stroid::topology::BuildSkeleton(cfg);
 
     ASSERT_NE(mesh, nullptr);
 
     const auto volume_attr_counts = CountVolumeAttributes(*mesh);
-    EXPECT_EQ(volume_attr_counts.at(static_cast<int>(cfg->core_id)), 1);
-    EXPECT_EQ(volume_attr_counts.at(static_cast<int>(cfg->envelope_id)), 6);
-    EXPECT_EQ(volume_attr_counts.at(static_cast<int>(cfg->vacuum_id)), 6);
+    EXPECT_EQ(volume_attr_counts.at(static_cast<int>(cfg->core_id.value())), 1);
+    EXPECT_EQ(volume_attr_counts.at(static_cast<int>(cfg->envelope_id.value())), 6);
+    EXPECT_EQ(volume_attr_counts.at(static_cast<int>(cfg->vacuum_id.value())), 6);
 
     const auto boundary_attr_counts = CountBoundaryAttributes(*mesh);
-    EXPECT_EQ(boundary_attr_counts.at(static_cast<int>(cfg->surface_bdr_id)), 6);
-    EXPECT_EQ(boundary_attr_counts.at(static_cast<int>(cfg->inf_bdr_id)), 6);
+    EXPECT_EQ(boundary_attr_counts.at(static_cast<int>(cfg->surface_bdr_id.value())), 6);
+    EXPECT_EQ(boundary_attr_counts.at(static_cast<int>(cfg->inf_bdr_id.value())), 6);
 }
 
 
@@ -333,7 +357,8 @@ TEST_F(stroidTest, Finalize_RefinementIncreasesElements) {
  * If this fails: inspect refine-loop count and any topology-side early exits in `Finalize`.
  */
 TEST_F(stroidTest, Finalize_DefaultRefinementScalesHexCountByEightPowerL) {
-    const Config cfg = LoadConfigFromRepo("configs/test_refinement_l2.toml");
+    const auto cfg_ptr = LoadConfigFromRepo("configs/test_refinement_l2.toml");
+    const auto& cfg = *cfg_ptr;
 
     const std::unique_ptr<mfem::Mesh> mesh = stroid::topology::BuildSkeleton(cfg);
     const int initial_elements = mesh->GetNE();
@@ -352,7 +377,8 @@ TEST_F(stroidTest, Finalize_DefaultRefinementScalesHexCountByEightPowerL) {
  * If this fails: inspect `Finalize` and verify external-domain elements are not excluded from refinement.
  */
 TEST_F(stroidTest, Finalize_ExternalDomainRefinementScalesHexCountByEightPowerL) {
-    const Config cfg = LoadConfigFromRepo("configs/test_external_domain_refinement_l1.toml");
+    const auto cfg_ptr = LoadConfigFromRepo("configs/test_external_domain_refinement_l1.toml");
+    const auto& cfg = *cfg_ptr;
 
     const std::unique_ptr<mfem::Mesh> mesh = stroid::topology::BuildSkeleton(cfg);
     const int initial_elements = mesh->GetNE();
@@ -371,7 +397,9 @@ TEST_F(stroidTest, Finalize_ExternalDomainRefinementScalesHexCountByEightPowerL)
  * If this fails: inspect `Finalize` orientation/refinement calls and any attribute mutation side effects.
  */
 TEST_F(stroidTest, Finalize_ExternalDomainConformingAndRefined) {
-    const Config cfg = LoadConfigFromRepo("configs/test_external_domain.toml");
+    const auto cfg_ptr = LoadConfigFromRepo("configs/test_external_domain.toml");
+    const auto& cfg = *cfg_ptr;
+
     const std::unique_ptr<mfem::Mesh> mesh = stroid::topology::BuildSkeleton(cfg);
     const int initial_elements = mesh->GetNE();
 
@@ -381,13 +409,13 @@ TEST_F(stroidTest, Finalize_ExternalDomainConformingAndRefined) {
     EXPECT_GT(mesh->GetNE(), initial_elements);
 
     const auto volume_attr_counts = CountVolumeAttributes(*mesh);
-    EXPECT_GT(volume_attr_counts.at(static_cast<int>(cfg->core_id)), 0);
-    EXPECT_GT(volume_attr_counts.at(static_cast<int>(cfg->envelope_id)), 0);
-    EXPECT_GT(volume_attr_counts.at(static_cast<int>(cfg->vacuum_id)), 0);
+    EXPECT_GT(volume_attr_counts.at(static_cast<int>(cfg->core_id.value())), 0);
+    EXPECT_GT(volume_attr_counts.at(static_cast<int>(cfg->envelope_id.value())), 0);
+    EXPECT_GT(volume_attr_counts.at(static_cast<int>(cfg->vacuum_id.value())), 0);
 
     const auto boundary_attr_counts = CountBoundaryAttributes(*mesh);
-    EXPECT_GT(boundary_attr_counts.at(static_cast<int>(cfg->surface_bdr_id)), 0);
-    EXPECT_GT(boundary_attr_counts.at(static_cast<int>(cfg->inf_bdr_id)), 0);
+    EXPECT_GT(boundary_attr_counts.at(static_cast<int>(cfg->surface_bdr_id.value())), 0);
+    EXPECT_GT(boundary_attr_counts.at(static_cast<int>(cfg->inf_bdr_id.value())), 0);
 }
 
 /**
@@ -399,16 +427,18 @@ TEST_F(stroidTest, Finalize_ExternalDomainConformingAndRefined) {
  * notably `src/lib/topology/topology.cpp` and `src/lib/utils/mesh_utils.cpp`.
  */
 TEST_F(stroidTest, Finalize_ExternalDomainKeepsOnlyExpectedMaterialAndBoundaryIDs) {
-    const Config cfg = LoadConfigFromRepo("configs/test_external_domain.toml");
+    const auto cfg_ptr = LoadConfigFromRepo("configs/test_external_domain.toml");
+    const auto& cfg = *cfg_ptr;
+
     const std::unique_ptr<mfem::Mesh> mesh = stroid::topology::BuildSkeleton(cfg);
 
     stroid::topology::Finalize(*mesh, cfg);
 
     const auto volume_attr_counts = CountVolumeAttributes(*mesh);
     const std::set<int> expected_volume_ids = {
-        static_cast<int>(cfg->core_id),
-        static_cast<int>(cfg->envelope_id),
-        static_cast<int>(cfg->vacuum_id)
+        static_cast<int>(cfg->core_id.value()),
+        static_cast<int>(cfg->envelope_id.value()),
+        static_cast<int>(cfg->vacuum_id.value())
     };
     for (const auto& [attr, count] : volume_attr_counts) {
         EXPECT_TRUE(expected_volume_ids.contains(attr));
@@ -418,8 +448,8 @@ TEST_F(stroidTest, Finalize_ExternalDomainKeepsOnlyExpectedMaterialAndBoundaryID
 
     const auto boundary_attr_counts = CountBoundaryAttributes(*mesh);
     const std::set<int> expected_boundary_ids = {
-        static_cast<int>(cfg->surface_bdr_id),
-        static_cast<int>(cfg->inf_bdr_id)
+        static_cast<int>(cfg->surface_bdr_id.value()),
+        static_cast<int>(cfg->inf_bdr_id.value())
     };
     for (const auto& [attr, count] : boundary_attr_counts) {
         EXPECT_TRUE(expected_boundary_ids.contains(attr));
@@ -496,7 +526,8 @@ TEST_F(stroidTest, ApplyEquiangular_BasicTransform) {
  * `configs/test_flattening.toml`.
  */
 TEST_F(stroidTest, ApplySpheroidal_FlattensZ) {
-    const Config cfg = LoadConfigFromRepo("configs/test_flattening.toml");
+    const auto cfg_ptr = LoadConfigFromRepo("configs/test_flattening.toml");
+    const auto& cfg = *cfg_ptr;
 
     mfem::Vector pos(3);
     pos(0) = 0.0;
@@ -571,9 +602,9 @@ TEST_F(stroidTest, TransformPoint_IsContinuousAcrossCoreAndStarInterfaces) {
     dir(2) = -0.4;
 
     mfem::Vector near_core_left = dir;
-    near_core_left *= cfg->r_core * (1.0 - eps);
+    near_core_left *= cfg->r_core.value() * (1.0 - eps);
     mfem::Vector near_core_right = dir;
-    near_core_right *= cfg->r_core * (1.0 + eps);
+    near_core_right *= cfg->r_core.value() * (1.0 + eps);
 
     const mfem::Vector core_left_mapped = TransformCopy(near_core_left, cfg);
     const mfem::Vector core_right_mapped = TransformCopy(near_core_right, cfg);
@@ -583,9 +614,9 @@ TEST_F(stroidTest, TransformPoint_IsContinuousAcrossCoreAndStarInterfaces) {
     EXPECT_LT(diff.Norml2(), 1e-3);
 
     mfem::Vector near_star_left = dir;
-    near_star_left *= cfg->r_star * (1.0 - eps);
+    near_star_left *= cfg->r_star.value() * (1.0 - eps);
     mfem::Vector near_star_right = dir;
-    near_star_right *= cfg->r_star * (1.0 + eps);
+    near_star_right *= cfg->r_star.value() * (1.0 + eps);
 
     const mfem::Vector star_left_mapped = TransformCopy(near_star_left, cfg);
     const mfem::Vector star_right_mapped = TransformCopy(near_star_right, cfg);
@@ -684,7 +715,9 @@ TEST_F(stroidTest, EndToEnd_BuildFinalizePromoteProject) {
  * If this fails: inspect external-domain topology assembly and projection loops over mixed attributes.
  */
 TEST_F(stroidTest, EndToEnd_ExternalDomainBuildFinalizePromoteProject) {
-    const Config cfg = LoadConfigFromRepo("configs/test_external_domain.toml");
+    const auto cfg_ptr= LoadConfigFromRepo("configs/test_external_domain.toml");
+    const auto& cfg = *cfg_ptr;
+
     const std::unique_ptr<mfem::Mesh> mesh = stroid::topology::BuildSkeleton(cfg);
     stroid::topology::Finalize(*mesh, cfg);
     stroid::topology::PromoteToHighOrder(*mesh, cfg);
@@ -705,8 +738,12 @@ TEST_F(stroidTest, EndToEnd_ExternalDomainBuildFinalizePromoteProject) {
  * that may leak starside nodes into vacuum geometry.
  */
 TEST_F(stroidTest, Volume_StellarDomainMatchesWithAndWithoutExternalDomain) {
-    const Config no_external_cfg = LoadConfigFromRepo("configs/test_volume_no_external.toml");
-    const Config with_external_cfg = LoadConfigFromRepo("configs/test_volume_with_external.toml");
+    const auto no_external_cfg_ptr = LoadConfigFromRepo("configs/test_volume_no_external.toml");
+    const auto with_external_cfg_ptr = LoadConfigFromRepo("configs/test_volume_with_external.toml");
+
+    const auto& no_external_cfg = *no_external_cfg_ptr;
+    const auto& with_external_cfg = *with_external_cfg_ptr;
+
 
     const std::unique_ptr<mfem::Mesh> no_external_mesh = stroid::topology::BuildSkeleton(no_external_cfg);
     stroid::topology::Finalize(*no_external_mesh, no_external_cfg);
@@ -719,12 +756,12 @@ TEST_F(stroidTest, Volume_StellarDomainMatchesWithAndWithoutExternalDomain) {
     stroid::topology::ProjectMesh(*with_external_mesh, with_external_cfg);
 
     const std::set<int> stellar_attrs_no_external = {
-        static_cast<int>(no_external_cfg->core_id),
-        static_cast<int>(no_external_cfg->envelope_id)
+        static_cast<int>(no_external_cfg->core_id.value()),
+        static_cast<int>(no_external_cfg->envelope_id.value())
     };
     const std::set<int> stellar_attrs_with_external = {
-        static_cast<int>(with_external_cfg->core_id),
-        static_cast<int>(with_external_cfg->envelope_id)
+        static_cast<int>(with_external_cfg->core_id.value()),
+        static_cast<int>(with_external_cfg->envelope_id.value())
     };
 
     const double stellar_volume_no_external = ComputeMeshVolumeForAttributes(*no_external_mesh, stellar_attrs_no_external);
@@ -744,7 +781,9 @@ TEST_F(stroidTest, Volume_StellarDomainMatchesWithAndWithoutExternalDomain) {
  * If this fails: inspect `ComputeMeshVolume*` helpers and region attribute IDs in config fixtures.
  */
 TEST_F(stroidTest, Volume_ExternalMeshExcludesVacuumWhenRequested) {
-    const Config cfg = LoadConfigFromRepo("configs/test_volume_with_external.toml");
+    const auto cfg_ptr = LoadConfigFromRepo("configs/test_volume_with_external.toml");
+    const auto& cfg = *cfg_ptr;
+
 
     const std::unique_ptr<mfem::Mesh> mesh = stroid::topology::BuildSkeleton(cfg);
     stroid::topology::Finalize(*mesh, cfg);
@@ -752,10 +791,10 @@ TEST_F(stroidTest, Volume_ExternalMeshExcludesVacuumWhenRequested) {
     stroid::topology::ProjectMesh(*mesh, cfg);
 
     const std::set<int> stellar_attrs = {
-        static_cast<int>(cfg->core_id),
-        static_cast<int>(cfg->envelope_id)
+        static_cast<int>(cfg->core_id.value()),
+        static_cast<int>(cfg->envelope_id.value())
     };
-    const std::set<int> vacuum_attr = {static_cast<int>(cfg->vacuum_id)};
+    const std::set<int> vacuum_attr = {static_cast<int>(cfg->vacuum_id.value())};
 
     const double total_volume = ComputeMeshVolume(*mesh);
     const double stellar_volume = ComputeMeshVolumeForAttributes(*mesh, stellar_attrs);
@@ -775,7 +814,8 @@ TEST_F(stroidTest, Volume_ExternalMeshExcludesVacuumWhenRequested) {
  * `IntegrateElementVolume`.
  */
 TEST_F(stroidTest, Volume_SphericalStellarDomainMatchesAnalyticSphere) {
-    const Config cfg = LoadConfigFromRepo("configs/test_volume_spherical_no_external.toml");
+    const auto cfg_ptr = LoadConfigFromRepo("configs/test_volume_spherical_no_external.toml");
+    const auto& cfg = *cfg_ptr;
 
     const std::unique_ptr<mfem::Mesh> mesh = stroid::topology::BuildSkeleton(cfg);
     stroid::topology::Finalize(*mesh, cfg);
@@ -783,12 +823,12 @@ TEST_F(stroidTest, Volume_SphericalStellarDomainMatchesAnalyticSphere) {
     stroid::topology::ProjectMesh(*mesh, cfg);
 
     const std::set<int> stellar_attrs = {
-        static_cast<int>(cfg->core_id),
-        static_cast<int>(cfg->envelope_id)
+        static_cast<int>(cfg->core_id.value()),
+        static_cast<int>(cfg->envelope_id.value())
     };
 
     const double measured_volume = ComputeMeshVolumeForAttributes(*mesh, stellar_attrs);
-    const double analytic_volume = 4.0 / 3.0 * kPi * std::pow(cfg->r_star, 3.0);
+    const double analytic_volume = 4.0 / 3.0 * kPi * std::pow(cfg->r_star.value(), 3.0);
     const double rel_err = std::abs(measured_volume - analytic_volume) / analytic_volume;
 
     EXPECT_LT(rel_err, 1e-2);
@@ -804,11 +844,12 @@ TEST_F(stroidTest, Volume_SphericalStellarDomainMatchesAnalyticSphere) {
  * and MFEM assembly setup in this test file.
  */
 TEST_F(stroidTest, Volume_SphericalStellarDomainDomainLFIntegratorMatchesAnalyticSphere) {
-    const Config cfg = LoadConfigFromRepo("configs/test_volume_spherical_with_external.toml");
+    const auto cfg_ptr = LoadConfigFromRepo("configs/test_volume_spherical_with_external.toml");
+    const auto& cfg = *cfg_ptr;
 
     std::unique_ptr<mfem::Mesh> mesh = BuildProjectedMesh(cfg);
     const double measured_volume = ComputeStellarVolumeWithDomainLFIntegrator(*mesh, cfg);
-    const double analytic_volume = 4.0 / 3.0 * kPi * std::pow(cfg->r_star, 3.0);
+    const double analytic_volume = 4.0 / 3.0 * kPi * std::pow(cfg->r_star.value(), 3.0);
     const double rel_err = std::abs(measured_volume - analytic_volume) / analytic_volume;
 
     EXPECT_LT(rel_err, 1e-2);
@@ -823,7 +864,9 @@ TEST_F(stroidTest, Volume_SphericalStellarDomainDomainLFIntegratorMatchesAnalyti
  * refinement/order config used by `configs/test_volume_spherical_no_external.toml`.
  */
 TEST_F(stroidTest, Conditioning_DefaultMeshHasPositiveJacobiansAndReasonableShape) {
-    const Config cfg = LoadConfigFromRepo("configs/test_volume_spherical_no_external.toml");
+    const auto cfg_ptr = LoadConfigFromRepo("configs/test_volume_spherical_no_external.toml");
+    const auto& cfg = *cfg_ptr;
+
     const std::unique_ptr<mfem::Mesh> mesh = BuildProjectedMesh(cfg);
 
     const ConditioningStats stats = CollectConditioningStats(*mesh, {});
@@ -845,12 +888,14 @@ TEST_F(stroidTest, Conditioning_DefaultMeshHasPositiveJacobiansAndReasonableShap
  * assignment in `BuildSkeleton`.
  */
 TEST_F(stroidTest, Conditioning_ExternalMeshPerRegionHasPositiveJacobians) {
-    const Config cfg = LoadConfigFromRepo("configs/test_volume_spherical_with_external.toml");
+    const auto cfg_ptr = LoadConfigFromRepo("configs/test_volume_spherical_with_external.toml");
+    const auto& cfg = *cfg_ptr;
+
     const std::unique_ptr<mfem::Mesh> mesh = BuildProjectedMesh(cfg);
 
-    const ConditioningStats core_stats = CollectConditioningStats(*mesh, {static_cast<int>(cfg->core_id)});
-    const ConditioningStats envelope_stats = CollectConditioningStats(*mesh, {static_cast<int>(cfg->envelope_id)});
-    const ConditioningStats vacuum_stats = CollectConditioningStats(*mesh, {static_cast<int>(cfg->vacuum_id)});
+    const ConditioningStats core_stats = CollectConditioningStats(*mesh, {static_cast<int>(cfg->core_id.value())});
+    const ConditioningStats envelope_stats = CollectConditioningStats(*mesh, {static_cast<int>(cfg->envelope_id.value())});
+    const ConditioningStats vacuum_stats = CollectConditioningStats(*mesh, {static_cast<int>(cfg->vacuum_id.value())});
 
     ASSERT_GT(core_stats.samples, 0);
     ASSERT_GT(envelope_stats.samples, 0);
@@ -874,7 +919,9 @@ TEST_F(stroidTest, Conditioning_ExternalMeshPerRegionHasPositiveJacobians) {
  * `src/lib/utils/mesh_utils.cpp`, then trace upstream mapping changes.
  */
 TEST_F(stroidTest, Conditioning_DefaultMeshHasNoFlippedElementsOrBoundaryFaces) {
-    const Config cfg = LoadConfigFromRepo("configs/test_volume_spherical_no_external.toml");
+    const auto cfg_ptr = LoadConfigFromRepo("configs/test_volume_spherical_no_external.toml");
+    const auto& cfg = *cfg_ptr;
+
     std::unique_ptr<mfem::Mesh> mesh = BuildProjectedMesh(cfg);
 
     stroid::utils::MarkFlippedElements(*mesh);
@@ -886,4 +933,98 @@ TEST_F(stroidTest, Conditioning_DefaultMeshHasNoFlippedElementsOrBoundaryFaces) 
     EXPECT_FALSE(volume_attr_counts.contains(999));
     EXPECT_FALSE(boundary_attr_counts.contains(500));
 }
+
+TEST_F(stroidTest, PolynomainalProjection) {
+    const auto cfg_ptr = LoadConfigFromRepo("configs/test_polynomial_projection.toml");
+    const auto& cfg = *cfg_ptr;
+
+    std::unique_ptr<mfem::Mesh> mesh = BuildProjectedMesh(cfg);
+
+    const int geom_order = mesh->GetNodes()->FESpace()->GetMaxElementOrder();
+    const int space_dim = mesh->Dimension();
+
+    mfem::H1_FECollection fec(geom_order, space_dim);
+    mfem::FiniteElementSpace fes(mesh.get(), &fec);
+
+    auto ProjectedFunction = [](const mfem::Vector& x) {
+        const double r = x.Norml2();
+        return 1 + 7 * r * r - 2 * r;
+    };
+
+    mfem::GridFunction projected_u(&fes);
+    mfem::FunctionCoefficient u_coeff(ProjectedFunction);
+    projected_u.ProjectCoefficient(u_coeff);
+
+    mfem::Vector x(space_dim);
+    x = 0.0;
+    for (double t = 0; t <= 1; t+= 0.01) {
+        x(0) = t;
+
+        double analytic_val = ProjectedFunction(x);
+        double projected_val = EvalGridFunctionAtPoint(*mesh, x, projected_u).value_or(std::numeric_limits<double>::quiet_NaN());
+
+        double rel_err = std::abs(projected_val - analytic_val) / analytic_val;
+        EXPECT_LT(rel_err, 1e-12);
+    }
+}
+
+TEST_F(stroidTest, TranscendtalProjection) {
+    const auto cfg_ptr = LoadConfigFromRepo("configs/test_polynomial_projection.toml");
+    const auto& cfg = *cfg_ptr;
+
+    std::unique_ptr<mfem::Mesh> mesh = BuildProjectedMesh(cfg);
+
+    const int geom_order = mesh->GetNodes()->FESpace()->GetMaxElementOrder();
+    const int space_dim = mesh->Dimension();
+
+    mfem::H1_FECollection fec(geom_order, space_dim);
+    mfem::FiniteElementSpace fes(mesh.get(), &fec);
+
+
+    auto ProjectedFunction = [](const mfem::Vector& x) {
+        const double r = x.Norml2();
+        if (r <= 1e-8) return 1.0;
+        return std::sin(r)/r;
+    };
+
+    auto expansion = [](const double t, const int order) {
+        double val = 0.0;
+        for (int k = 0; k < order; ++k) {
+            const double sign = (k % 2 == 0) ? 1.0 : -1.0;
+            const double term = sign * std::pow(t, 2 * k) / std::tgamma(2 * k + 2);
+            val += term;
+        }
+        return val;
+    };
+
+    auto expansion_err = [geom_order, &expansion](const double r) {
+        const double expansion_val = expansion(r, geom_order);
+
+        const double analytic_val = std::sin(r)/r;
+        return std::abs((expansion_val - analytic_val))/std::abs(analytic_val);
+    };
+
+    double max_estimated_truncation_error = 0.0;
+    for (double t = 0; t < 1; t+= 0.01) {
+        double trunc_err = expansion_err(t);
+        max_estimated_truncation_error = std::max(max_estimated_truncation_error, trunc_err);
+    }
+
+    mfem::GridFunction projected_u(&fes);
+    mfem::FunctionCoefficient u_coeff(ProjectedFunction);
+    projected_u.ProjectCoefficient(u_coeff);
+
+    mfem::Vector x(space_dim);
+    x = 0.0;
+    for (double t = 0; t <= 1; t+= 0.01) {
+        x(0) = t;
+
+        double analytic_val = ProjectedFunction(x);
+        double projected_val = EvalGridFunctionAtPoint(*mesh, x, projected_u).value_or(std::numeric_limits<double>::quiet_NaN());
+
+        double rel_err = std::abs(projected_val - analytic_val) / analytic_val;
+        EXPECT_LT(rel_err, 10*max_estimated_truncation_error);
+    }
+}
+
 

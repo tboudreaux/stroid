@@ -1,18 +1,17 @@
 [main]
-refinement_levels = 2
-order = 3
+core_steepness = 1.0
+flattening = 0.2
 include_external_domain = false
+inf_bdr_id = 2
+order = 3
 r_core = 1.5
-r_star = 5.0
-flattening = 0.0
 r_infinity = 6.0
 r_instability = 1e-14
-core_steepness = 1.0
+r_star = 5.0
+refinement_levels = 1
 surface_bdr_id = 1
-inf_bdr_id = 2
 core_id = 1
 envelope_id = 2
 vacuum_id = 3
-
 [main.optimization_methods]
 smoothstep = true

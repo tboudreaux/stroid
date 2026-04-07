@@ -4,6 +4,7 @@
 #include "stroid/topology/topology.h"
 #include "stroid/topology/mapping.h"
 #include "stroid/topology/curvilinear.h"
+#include "stroid/topology/optimize.h"
 #include "stroid/utils/mesh_utils.h"
 #include "stroid/IO/mesh.h"
 
