@@ -228,4 +228,10 @@ class TMOPProgressBar : public mfem::IterativeSolverMonitor {
         delete metric;
         delete target_c;
     }
+
+    void OptimizeMesh(mfem::Mesh& mesh, const fourdst::config::Config<config::MeshConfig> &cfg) {
+        if (cfg->optimization_methods.has_value() && cfg->optimization_methods.value().tmop.has_value() && cfg->optimization_methods.value().tmop.value()) {
+            ApplyTMOP(mesh, cfg);
+        }
+    }
 }

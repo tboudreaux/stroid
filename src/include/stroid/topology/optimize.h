@@ -11,4 +11,9 @@ namespace stroid::topology {
      * @breif Apply target matrix optimization to improve conditioning of the mesh
      */
     void ApplyTMOP(mfem::Mesh& mesh, const fourdst::config::Config<config::MeshConfig> &config);
+
+    /**
+     *@breif Helper to call TMOP if the correct flags are set
+     */
+    void OptimizeMesh(mfem::Mesh& mesh, const fourdst::config::Config<config::MeshConfig> &cfg);
 }

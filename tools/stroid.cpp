@@ -66,8 +66,10 @@ int main(int argc, char** argv) {
 
     auto* generate = app.add_subcommand("generate", "Generate a multi-block mesh");
     auto* info = app.add_subcommand("info", "Access information about stroid");
+    auto* view = app.add_subcommand("view", "Display a mesh with glvis");
 
     std::optional<std::string> config_filename;
+    std::optional<std::string> mesh_file;
     std::string output_filename = "stroid.mesh";
     bool view_mesh = false;
     bool no_save = false;
@@ -80,6 +82,39 @@ int main(int argc, char** argv) {
     generate->add_option("--glvis-host", glvis_host, "GLVis server host")->capture_default_str();
     generate->add_option("--glvis-port", glvis_port, "GLVis server port")->capture_default_str();
     generate->add_option("-o,--output", output_filename, "Output filename base")->capture_default_str();
+
+    view->add_option("--host", glvis_host, "GLVis server host")->capture_default_str();
+    view->add_option("--port", glvis_port, "GLVis server port")->capture_default_str();
+    view->add_option("-f,--file", mesh_file, "Path to .mesh file")->check(CLI::ExistingFile);
+
+    auto to_lower = [](std::string s) {
+        std::string out;
+        out.reserve(s.size());
+        std::ranges::transform(s, std::back_inserter(out), [](unsigned char c) {
+            return static_cast<char>(std::tolower(c));
+        });
+        return out;
+    };
+
+    std::map<std::string, stroid::IO::VISUALIZATION_MODE> mode_map;
+    for (auto [value, name] : magic_enum::enum_entries<stroid::IO::VISUALIZATION_MODE>()) {
+        mode_map[to_lower(std::string(name))] = value;
+    }
+
+    // 2. Storage variable is now the actual Enum type
+    stroid::IO::VISUALIZATION_MODE selected_mode;
+
+    // 3. One line to rule them all
+    view->add_option("-v,--vis-mode", selected_mode, "Select Visualization mode")
+        ->transform(CLI::CheckedTransformer(mode_map, CLI::ignore_case))
+        ->default_val(stroid::IO::VISUALIZATION_MODE::ELEMENT_ID);
+    view->add_flag_callback("-l,--list", [&]() {
+        std::println("Available Visualization Modes:");
+        for (const auto &name: mode_map | std::views::keys) {
+            std::println("\t - {}", name);
+        }
+        exit(0);
+    });
 
     for (auto [value, name_view] : magic_enum::enum_entries<MESH_FORMATS>()) {
         std::string name{name_view};
@@ -127,6 +162,20 @@ int main(int argc, char** argv) {
         return app.exit(e);
     }
 
+    if (*view) {
+        if (!mesh_file.has_value()) {
+            throw std::runtime_error("Mesh file must be specified");
+        }
+        mfem::Mesh mesh(mesh_file.value().c_str());
+        stroid::IO::ViewMesh(mesh,
+                             "Mesh Viewer - Colored by Element ID",
+                             selected_mode,
+                             glvis_host,
+                             glvis_port);
+        exit(0);
+
+    }
+
     if (*generate) {
         if (config_filename.has_value()) {
             cfg.load(config_filename.value());
@@ -137,11 +186,7 @@ int main(int argc, char** argv) {
         stroid::topology::Finalize(*mesh, cfg);
         stroid::topology::PromoteToHighOrder(*mesh, cfg);
         stroid::topology::ProjectMesh(*mesh, cfg);
-        if (cfg->optimization_methods.has_value() && cfg->optimization_methods.value().tmop.has_value() && cfg->optimization_methods.value().tmop.value()) {
-            stroid::topology::ApplyTMOP(*mesh, cfg);
-        }
-
-
+        stroid::topology::OptimizeMesh(*mesh, cfg);
 
         if (!no_save) {
             const std::string& final_path = output_filename;
@@ -201,7 +246,7 @@ int main(int argc, char** argv) {
                                  glvis_port);
         }
     } else if (!*info) {
-        std::println("Usage: {} [generate|info] --help", argv[0]);
+        std::println("Usage: {} [generate|info|view] --help", argv[0]);
     }
 
     return 0;
