@@ -10,6 +10,7 @@
 #include "stroid/utils/types.h"
 #include "stroid/refinement/uniform.h"
 #include "stroid/utils/mesh_stats.h"
+#include "stroid/version.h"
 
 /**
  * @namespace stroid

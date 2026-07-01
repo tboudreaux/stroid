@@ -11,6 +11,12 @@
 #include <cstdint>
 #include <format>
 #include <chrono>
+#include <string>
+#include <string_view>
+#include <expected>
+#include <stdexcept>
+#include <concepts>
+#include <limits>
 
 namespace stroid::IO {
 
@@ -211,18 +217,49 @@ END BLOCK CONFIG)",
         template <std::integral T>
         std::expected<T, std::string> parse_int(std::string_view v) {
             const std::string_view s = trim(v);
-            T out{};
-            if (const auto res = std::from_chars(s.data(), s.data() + s.size(), out); res.ec != std::errc{} || res.ptr != s.data() + s.size())
+
+            std::string temp(s);
+
+            try {
+                size_t pos = 0;
+
+                if constexpr (std::is_signed_v<T>) {
+                    long long val = std::stoll(temp, &pos);
+
+                    if (pos != temp.size() || val < std::numeric_limits<T>::min() || val > std::numeric_limits<T>::max()) {
+                        return std::unexpected(std::format("invalid integer value '{}'", v));
+                    }
+                    return static_cast<T>(val);
+
+                } else {
+                    unsigned long long val = std::stoull(temp, &pos);
+
+                    if (pos != temp.size() || val > std::numeric_limits<T>::max()) {
+                        return std::unexpected(std::format("invalid integer value '{}'", v));
+                    }
+                    return static_cast<T>(val);
+                }
+            } catch (const std::exception&) {
                 return std::unexpected(std::format("invalid integer value '{}'", v));
-            return out;
+            }
         }
 
         std::expected<double, std::string> parse_double(std::string_view v) {
             const std::string_view s = trim(v);
-            double out{};
-            if (const auto [ptr, ec] = std::from_chars(s.data(), s.data() + s.size(), out); ec != std::errc{} || ptr != s.data() + s.size())
+            std::string temp(s);
+
+            try {
+                size_t pos = 0;
+                double out = std::stod(temp, &pos);
+
+                if (pos != temp.size()) {
+                    return std::unexpected(std::format("invalid floating-point value '{}'", v));
+                }
+                return out;
+
+            } catch (const std::exception&) {
                 return std::unexpected(std::format("invalid floating-point value '{}'", v));
-            return out;
+            }
         }
 
         std::expected<std::map<std::string, std::string>, std::string> extract_blocks(std::istream& is) {
