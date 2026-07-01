@@ -21,14 +21,14 @@ namespace stroid::topology {
                         mesh->AddVertex(x, y, z);
         };
 
-        add_box(config->r_core);
-        add_box(config->r_star);
+        add_box(config->r_core.value());
+        add_box(config->r_star.value());
         if (config->include_external_domain) {
-            add_box(config->r_infinity);
+            add_box(config->r_infinity.value());
         }
 
         const int core_v[8] = {0, 1, 3, 2, 4, 5, 7, 6};
-        mesh->AddHex(core_v, config->core_id);
+        mesh->AddHex(core_v, config->core_id.value());
 
         std::vector<std::array<int, 8>> stellar_shells = {
             {8, 9, 11, 10, 0, 1, 3, 2},
@@ -39,7 +39,7 @@ namespace stroid::topology {
             {0, 4, 6, 2, 8, 12, 14, 10}   // -X face
         };
         for (const auto & shell : stellar_shells) {
-            mesh->AddHex(shell.data(), config->envelope_id);
+            mesh->AddHex(shell.data(), config->envelope_id.value());
         }
 
         if (config->include_external_domain) {
@@ -51,7 +51,7 @@ namespace stroid::topology {
             vacuum_shells.push_back({12, 13, 15, 14, 20, 21, 23, 22});
             vacuum_shells.push_back({10, 11, 9, 8, 18, 19, 17, 16});
             for (const auto & shell : vacuum_shells) {
-                mesh->AddHex(shell.data(), config->vacuum_id);
+                mesh->AddHex(shell.data(), config->vacuum_id.value());
             }
         }
 
@@ -66,7 +66,7 @@ namespace stroid::topology {
         };
 
         for (const auto& bdr: surface_bdr_quads) {
-            mesh->AddBdrQuad(bdr, config->surface_bdr_id);
+            mesh->AddBdrQuad(bdr, config->surface_bdr_id.value());
         }
 
         if (config->include_external_domain) {
@@ -80,7 +80,7 @@ namespace stroid::topology {
             };
 
             for (const auto& bdr: inf_bdr_quads) {
-                mesh->AddBdrQuad(bdr, config->inf_bdr_id);
+                mesh->AddBdrQuad(bdr, config->inf_bdr_id.value());
             }
         }
 

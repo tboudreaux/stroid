@@ -4,8 +4,12 @@
 #include "stroid/topology/topology.h"
 #include "stroid/topology/mapping.h"
 #include "stroid/topology/curvilinear.h"
+#include "stroid/topology/optimize.h"
 #include "stroid/utils/mesh_utils.h"
 #include "stroid/IO/mesh.h"
+#include "stroid/utils/types.h"
+#include "stroid/refinement/uniform.h"
+#include "stroid/utils/mesh_stats.h"
 
 /**
  * @namespace stroid
@@ -44,46 +48,36 @@
  * @endcode
  */
 namespace stroid {
-    /**
-     * @brief Version helpers for the stroid library.
-     */
-    struct version {
-        static constexpr int major = @STROID_VERSION_MAJOR@;
-        static constexpr int minor = @STROID_VERSION_MINOR@;
-        static constexpr int patch = @STROID_VERSION_PATCH@;
-        static constexpr const char* tag = "@STROID_VERSION_TAG@";
+    inline StroidMesh GenerateMesh(const fourdst::config::Config<stroid::config::MeshConfig>& cfg) {
+        StroidMesh sm;
+        sm.config = *cfg;
+        auto reference = stroid::topology::BuildSkeleton(cfg);
+        stroid::topology::Finalize(*reference, cfg);
+        sm.refinement_levels = cfg->refinement_levels.value_or(0);
 
-        static std::string toString() {
-            std::string versionStr = std::to_string(major) + "." +
-                                     std::to_string(minor) + "." +
-                                     std::to_string(patch);
-            if (std::string(tag) != "") {
-                versionStr += "-" + std::string(tag);
-            }
-            return versionStr;
+        sm.reference_mesh = std::move(reference);
+        sm.mesh = utils::BuildProjected(*sm.reference_mesh, cfg);
+        if (cfg->optimization_methods.has_value() && cfg->optimization_methods.value().tmop.has_value() && cfg->optimization_methods.value().tmop.value()) {
+            stroid::topology::ApplyTMOP(*sm.mesh, cfg);
         }
+        return sm;
+    }
+    inline StroidMesh GenerateMesh(const stroid::config::MeshConfig& config) {
+        fourdst::config::Config<config::MeshConfig> cfg;
+        auto Mutator = [&config](config::MeshConfig& orig) {
+            orig = config;
+        };
 
-        friend std::ostream& operator<<(std::ostream& os, const version&) {
-            os << toString();
-            return os;
-        }
-    };
+        cfg.mutate(Mutator);
+        return GenerateMesh(cfg);
+    }
+    inline StroidMesh GenerateMesh(const std::string& filename) {
+        fourdst::config::Config<stroid::config::MeshConfig> config;
+        config.load(filename);
+        return GenerateMesh(config);
+    }
 }
 
-/**
- * @namespace std
- * @brief Standard library extensions used by stroid.
- *
- * Provides a `std::formatter` specialization for `stroid::version` so it can
- * be used with `std::format` and related APIs.
- */
-// Overload format struct
-template <>
-struct std::formatter<stroid::version> : std::formatter<std::string> {
-    auto format(const stroid::version& v, auto& ctx) {
-        return std::formatter<std::string>::format(stroid::version::toString(), ctx);
-    }
-};
 
 /**
  * @namespace stroid::config

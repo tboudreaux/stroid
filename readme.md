@@ -92,25 +92,31 @@ inf_bdr_id = 2
 core_id = 1
 envelope_id = 2
 vacuum_id = 3
+
+[main.optimization_methods]
+tmop = false
+smoothstep = true
 ```
 
 <!-- Table of what these parameters do -->
-| Parameter               | Description                                                                                         | Default |
-|-------------------------|-----------------------------------------------------------------------------------------------------|---------|
-| refinement_levels       | Number of uniform refinement levels to apply to the mesh after generation                           | 4       |
-| order                   | The polynomial order of the finite elements in the mesh                                             | 3       |
-| include_external_domain | Whether to include an external domain extending to r_infinity                                       | true    |
-| r_core                  | The radius of the core region of the star                                                           | 1.5     |
-| r_star                  | The radius of the star                                                                              | 5.0     |
-| flattening              | The flattening factor of the star (0 for spherical, >0 for oblate)                                  | 0       |
-| r_infinity              | The outer radius of the external domain (if included)                                               | 6.0     |
-| r_instability           | The radius at which no transformations are applied to the initial topology (to avoid singularities) | 1e-14   |
-| core_steepness          | The steepness of the transition between the core and envelope regions of the star                   | 1.0     |
-| surface_bdr_id          | The boundary ID to assign to the surface of the star                                                | 1       |
-| inf_bdr_id              | The boundary ID to assign to the outer boundary of the external domain (if included)                | 2       |
-| core_id                 | The material ID to assign to the core region of the star                                            | 1       |
-| envelope_id             | The material ID to assign to the envelope region of the star                                        | 2       |
-| vacuum_id               | The material ID to assign to the vacuum region of the star (if included)                            | 3       |
+| Parameter                       | Description                                                                                                                                                                                                                                        | Default |
+|---------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------|
+| refinement_levels               | Number of uniform refinement levels to apply to the mesh after generation                                                                                                                                                                          | 4       |
+| order                           | The polynomial order of the finite elements in the mesh                                                                                                                                                                                            | 3       |
+| include_external_domain         | Whether to include an external domain extending to r_infinity                                                                                                                                                                                      | true    |
+| r_core                          | The radius of the core region of the star                                                                                                                                                                                                          | 1.5     |
+| r_star                          | The radius of the star                                                                                                                                                                                                                             | 5.0     |
+| flattening                      | The flattening factor of the star (0 for spherical, >0 for oblate)                                                                                                                                                                                 | 0       |
+| r_infinity                      | The outer radius of the external domain (if included)                                                                                                                                                                                              | 6.0     |
+| r_instability                   | The radius at which no transformations are applied to the initial topology (to avoid singularities)                                                                                                                                                | 1e-14   |
+| core_steepness                  | The steepness of the transition between the core and envelope regions of the star                                                                                                                                                                  | 1.0     |
+| surface_bdr_id                  | The boundary ID to assign to the surface of the star                                                                                                                                                                                               | 1       |
+| inf_bdr_id                      | The boundary ID to assign to the outer boundary of the external domain (if included)                                                                                                                                                               | 2       |
+| core_id                         | The material ID to assign to the core region of the star                                                                                                                                                                                           | 1       |
+| envelope_id                     | The material ID to assign to the envelope region of the star                                                                                                                                                                                       | 2       |
+| vacuum_id                       | The material ID to assign to the vacuum region of the star (if included)                                                                                                                                                                           | 3       |
+| optimization_methods.tmop       | The tmop flag enables or disables the use of TMOP ideal shape unit size metric optimization during mesh generation. This can help improve the quality of the generated mesh, but will dramatically increase the time required for mesh generation. | false   |
+| optimization_methods.smoothstep | The smoothstep flag enables or disables the use of a smoothstep function to transition between the core and envelope regions of the star. This can help improve the quality of the generated mesh                                                  | true    |
 
 
 If no configuration file is provided, stroid will use the default parameters listed above. Further, configuration files
@@ -138,6 +144,7 @@ int main() {
     stroid::topology::Finalize(*mesh, cfg);
     stroid::topology::PromoteToHighOrder(*mesh, cfg);
     stroid::topology::ProjectMesh(*mesh, cfg);
+    stroid::topology::OptimizeMesh(*mesh, cfg);
 
 
     stroid::IO::ViewMesh(*mesh, "Spheroidal Mesh", stroid::IO::VISUALIZATION_MODE::BOUNDARY_ELEMENT_ID);

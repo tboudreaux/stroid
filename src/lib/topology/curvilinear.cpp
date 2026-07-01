@@ -5,7 +5,7 @@
 
 namespace stroid::topology {
     void PromoteToHighOrder(mfem::Mesh &mesh, const fourdst::config::Config<config::MeshConfig> &config) {
-        const auto* fec = new mfem::H1_FECollection(config->order, mesh.Dimension());
+        const auto* fec = new mfem::H1_FECollection(config->order.value(), mesh.Dimension());
         auto* fes = new mfem::FiniteElementSpace(&mesh, fec, mesh.SpaceDimension());
         mesh.SetNodalFESpace(fes);
     }
@@ -53,16 +53,5 @@ namespace stroid::topology {
             }
         }
 
-        // for (int i = 0; i < nDofs; ++i) {
-        //     for (int d = 0; d < vDim; ++d) {
-        //         pos(d) = nodes(fes->DofToVDof(i, d));
-        //     }
-        //
-        //     TransformPoint(pos, config, 0);
-        //
-        //     for (int d = 0; d < vDim; ++d) {
-        //         nodes(fes->DofToVDof(i, d)) = pos(d);
-        //     }
-        // }
     }
 }

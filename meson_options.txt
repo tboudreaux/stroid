@@ -1,3 +1,4 @@
 option('pkg_config', type: 'boolean', value: false, description: 'generate pkg-config file for stroid')
 option('build_tests', type: 'boolean', value: true, description: 'compile subproject tests')
 option('build_tools', type: 'boolean', value: true, description: 'compile stroid command line tools')
+option('build_python', type: 'boolean', value: true, description: 'compile stroid python bindings')

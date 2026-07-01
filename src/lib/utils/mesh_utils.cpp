@@ -2,6 +2,8 @@
 #include "mfem.hpp"
 #include <print>
 
+#include "stroid/topology/curvilinear.h"
+
 namespace stroid::utils {
     void MarkFlippedElements(mfem::Mesh& mesh) {
         for (int i = 0; i < mesh.GetNE(); i++) {
@@ -50,5 +52,45 @@ namespace stroid::utils {
                 mesh.SetBdrAttribute(i, 500);
             }
         }
+    }
+
+    void ExportJacobianRadialProfile(mfem::Mesh& mesh, const std::string& filename) {
+        std::ofstream ofs(filename);
+
+        if (!ofs.good()) {
+            throw std::runtime_error(std::format("Stroid: Could not open file {} for writing Jacobian radial profile", filename));
+        }
+
+        ofs << "Radius,DetJ,Attribute,ElementID\n";
+        ofs.precision(10);
+
+        const int sample_order = 2 * mesh.GetNodes()->FESpace()->GetMaxElementOrder() + 2;
+        for (int i = 0; i < mesh.GetNE(); ++i) {
+            mfem::ElementTransformation *T = mesh.GetElementTransformation(i);
+            const int attr = mesh.GetAttribute(i);
+
+            const mfem::IntegrationRule &ir = mfem::IntRules.Get(T->GetGeometryType(), sample_order);
+
+            for (int j = 0; j < ir.GetNPoints(); ++j) {
+                T->SetIntPoint(&ir.IntPoint(j));
+
+                mfem::Vector pos;
+                T->Transform(ir.IntPoint(j), pos);
+
+                const double r = pos.Norml2();
+                const double detJ = T->Jacobian().Det();
+
+                ofs << r << "," << detJ << "," << attr << ',' << i << "\n";
+            }
+        }
+        ofs.close();
+        std::println("Jacobian radial profile exported to {}", filename);
+    }
+
+    std::unique_ptr<mfem::Mesh> BuildProjected(const mfem::Mesh& reference, const fourdst::config::Config<config::MeshConfig>& cfg) {
+        auto projected = std::make_unique<mfem::Mesh>(reference);
+        topology::PromoteToHighOrder(*projected, cfg);
+        topology::ProjectMesh(*projected, cfg);
+        return projected;
     }
 }
