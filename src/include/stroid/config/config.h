@@ -1,6 +1,8 @@
 #pragma once
 
 #include <cstdint>
+#include <optional>
+#include <string>
 
 namespace stroid::config {
 
@@ -77,6 +79,13 @@ namespace stroid::config {
         std::optional<double> core_steepness = 1.0;
 
         /**
+         * @brief Continuity order for the core-envelope transition (0 = discontinuous, 1 = C1, 2 = C2).
+         * @section toml
+         * - [main].continuity_order
+         */
+        std::optional<size_t> continuity_order = 2;
+
+        /**
          * @brief Boundary attribute id for stellar surface
          * @section toml
          * - [main].surface_bdr_id
@@ -112,5 +121,6 @@ namespace stroid::config {
         std::optional<size_t> vacuum_id = 3;
 
         std::optional<OptimizationMethods> optimization_methods = OptimizationMethods{true, true};
+
     };
 }

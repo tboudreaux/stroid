@@ -1,0 +1,46 @@
+#pragma once
+
+#include <string>
+#include <ostream>
+
+namespace stroid {
+    /**
+     * @brief Version helpers for the stroid library.
+     */
+    struct version {
+        static constexpr int major = @STROID_VERSION_MAJOR@;
+        static constexpr int minor = @STROID_VERSION_MINOR@;
+        static constexpr int patch = @STROID_VERSION_PATCH@;
+        static constexpr const char* tag = "@STROID_VERSION_TAG@";
+
+        static std::string toString() {
+            std::string versionStr = std::to_string(major) + "." +
+                                     std::to_string(minor) + "." +
+                                     std::to_string(patch);
+            if (std::string(tag) != "") {
+                versionStr += "-" + std::string(tag);
+            }
+            return versionStr;
+        }
+
+        friend std::ostream& operator<<(std::ostream& os, const version&) {
+            os << toString();
+            return os;
+        }
+    };
+}
+
+/**
+ * @namespace std
+ * @brief Standard library extensions used by stroid.
+ *
+ * Provides a `std::formatter` specialization for `stroid::version` so it can
+ * be used with `std::format` and related APIs.
+ */
+// Overload format struct
+template <>
+struct std::formatter<stroid::version> : std::formatter<std::string> {
+    auto format(const stroid::version& v, auto& ctx) {
+        return std::formatter<std::string>::format(stroid::version::toString(), ctx);
+    }
+};

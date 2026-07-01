@@ -1,0 +1,25 @@
+[build-system]
+requires = ["meson-python>=0.19.0", "meson>=1.9.1", "pybind11==3.0.0", "fourdst==0.10.6"]
+build-backend = "mesonpy"
+
+[project]
+name = "stroid"
+dynamic = ["version"]
+description = "O-grid mesh generation with multiple domains"
+readme = "README.md"
+license = { file = "LICENSE.txt" }
+
+authors = [
+    {name = "Emily M. Boudreaux", email = "emily@boudreauxmail.com"},
+]
+maintainers = [
+    {name = "Emily M. Boudreaux", email = "emily@boudreauxmail.com"}
+]
+
+[tool.meson-python.args]
+setup = [
+    '-Dbuild_tools=false',
+    '-Dbuild_tests=false',
+    '-Dpkg_config=false'
+]
+install = ['--skip-subprojects']

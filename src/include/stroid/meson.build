@@ -21,8 +21,8 @@ config.set('STROID_VERSION_PATCH', ver_parts[2])
 config.set('STROID_VERSION_TAG',   ver_parts[3])
 
 configure_file(
-    input : 'stroid.h.in',
-    output : 'stroid.h',
+    input : 'version.h.in',
+    output : 'version.h',
     configuration : config ,
     install: true,
     install_dir: get_option('includedir') / 'stroid'

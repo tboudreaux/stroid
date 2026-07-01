@@ -1,4 +1,4 @@
-project('stroid', 'cpp', meson_version : '>= 1.3.0', version : 'v0.3.0', default_options : ['cpp_std=c++23'])
+project('stroid', 'cpp', meson_version : '>= 1.3.0', version : 'v0.4.0', default_options : ['cpp_std=c++23'])
 
 subdir('build-check')
 
@@ -13,6 +13,10 @@ if get_option('build_tools')
     subdir('tools')
 endif
 
+if get_option('build_python')
+    subdir('build-python')
+endif
+
 if get_option('pkg_config')
     pkg = import('pkgconfig')
     pkg.generate(
@@ -20,7 +24,7 @@ if get_option('pkg_config')
         description: 'Stroid multi-block curvilinear mesh generation library',
         version: meson.project_version(),
         libraries: [
-            stroid_lib
+            libstroid
         ],
         subdirs: ['stroid'],
         filebase: 'stroid',

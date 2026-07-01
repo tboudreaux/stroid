@@ -172,7 +172,8 @@ class TMOPProgressBar : public mfem::IterativeSolverMonitor {
         fes->GetEssentialTrueDofs(ess_bdr, ess_tdof_list);
 
         mfem::TMOP_QualityMetric* metric = new mfem::TMOP_Metric_302();
-        mfem::TargetConstructor* target_c = new mfem::TargetConstructor(mfem::TargetConstructor::IDEAL_SHAPE_UNIT_SIZE);
+        mfem::TargetConstructor* target_c = new mfem::TargetConstructor(mfem::TargetConstructor::IDEAL_SHAPE_GIVEN_SIZE);
+        target_c->SetNodes(*mesh.GetNodes());
         mfem::TMOP_Integrator* tmop_integrator = new mfem::TMOP_Integrator(metric, target_c);
 
         mfem::NonlinearForm a(fes);
@@ -185,10 +186,10 @@ class TMOPProgressBar : public mfem::IterativeSolverMonitor {
         b = 0.0;
 
         mfem::MINRESSolver minres;
-        minres.SetMaxIter(500);
+        minres.SetMaxIter(750);
         minres.SetRelTol(1e-5);
         minres.SetAbsTol(0.0);
-        minres.SetPrintLevel(0);
+        minres.SetPrintLevel(-1);
 
         mfem::DSmoother jacobi(1, 1.0, 1);
         jacobi.SetPositiveDiagonal(true);
@@ -206,7 +207,7 @@ class TMOPProgressBar : public mfem::IterativeSolverMonitor {
             }
         }
 
-        constexpr double newton_rtol = 1e-4;
+        constexpr double newton_rtol = 1e-8;
         mfem::TMOPNewtonSolver newton(ir, 0);
         newton.SetPreconditioner(minres);
         newton.SetOperator(a);
