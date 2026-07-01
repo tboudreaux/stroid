@@ -101,10 +101,8 @@ int main(int argc, char** argv) {
         mode_map[to_lower(std::string(name))] = value;
     }
 
-    // 2. Storage variable is now the actual Enum type
     stroid::IO::VISUALIZATION_MODE selected_mode;
 
-    // 3. One line to rule them all
     view->add_option("-v,--vis-mode", selected_mode, "Select Visualization mode")
         ->transform(CLI::CheckedTransformer(mode_map, CLI::ignore_case))
         ->default_val(stroid::IO::VISUALIZATION_MODE::ELEMENT_ID);
@@ -142,8 +140,6 @@ int main(int argc, char** argv) {
             selected_format = value;
         });
     }
-
-    // generate->require_subcommand(1);
 
     info->add_flag_callback("-v,--version", []() {
         std::println("Stroid Version {}", stroid::version::toString());

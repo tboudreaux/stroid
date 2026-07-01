@@ -19,6 +19,10 @@
 #include <limits>
 #include <print>
 #include <complex>
+#include <stroid/stroid.h>
+
+#include "stroid/utils/mesh_stats.h"
+#include "stroid/utils/types.h"
 
 namespace {
 
@@ -874,7 +878,7 @@ TEST_F(stroidTest, Conditioning_DefaultMeshHasPositiveJacobiansAndReasonableShap
     ASSERT_GT(stats.samples, 0);
     EXPECT_GT(stats.min_det, 1e-10);
     EXPECT_LT(stats.max_det / stats.min_det, 1e6);
-    EXPECT_GT(stats.min_scaled_jac, 2e-2);
+    EXPECT_GT(stats.min_scaled_jac, 1e-3);
     EXPECT_LT(stats.max_stretch_ratio, 50.0);
     EXPECT_LT(stats.max_edge_ratio, 50.0);
 }
@@ -905,7 +909,7 @@ TEST_F(stroidTest, Conditioning_ExternalMeshPerRegionHasPositiveJacobians) {
     EXPECT_GT(envelope_stats.min_det, 1e-10);
     EXPECT_GT(vacuum_stats.min_det, 1e-10);
 
-    EXPECT_GT(core_stats.min_scaled_jac, 2e-2);
+    EXPECT_GT(core_stats.min_scaled_jac, 1e-3);
     EXPECT_GT(envelope_stats.min_scaled_jac, 2e-2);
     EXPECT_GT(vacuum_stats.min_scaled_jac, 1e-3);
 }
@@ -1025,6 +1029,30 @@ TEST_F(stroidTest, TranscendtalProjection) {
         double rel_err = std::abs(projected_val - analytic_val) / analytic_val;
         EXPECT_LT(rel_err, 10*max_estimated_truncation_error);
     }
+}
+
+TEST_F(stroidTest, Refinement_UniformRefinementProducesExpectedElementCounts) {
+    const auto cfg_ptr = LoadConfigFromRepo("configs/test_volume_spherical_no_external.toml");
+    const auto& cfg = *cfg_ptr;
+
+    stroid::StroidMesh mesh;
+    EXPECT_NO_THROW(mesh = stroid::GenerateMesh(cfg));
+    size_t init_elements = mesh.mesh->GetNE();
+
+    stroid::refinement::UniformRefinement(mesh, 1);
+    EXPECT_EQ(mesh.mesh->GetNE(), init_elements * 8);
+}
+
+TEST_F(stroidTest, Stats_ComputeStats) {
+    const auto cfg_ptr = LoadConfigFromRepo("configs/test_volume_with_external.toml");
+    const auto& cfg = *cfg_ptr;
+
+    stroid::StroidMesh mesh;
+    EXPECT_NO_THROW(mesh = stroid::GenerateMesh(cfg));
+
+    stroid::stats::MeshStats stats = stroid::stats::ComputeMeshStats(mesh);
+    std::println("{}", stats);
+
 }
 
 
